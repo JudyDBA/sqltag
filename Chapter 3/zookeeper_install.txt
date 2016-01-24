@@ -1,0 +1,647 @@
+/*
+
+    Zookeeper install 
+    
+    
+    2015.12.31
+    
+    주키퍼 학습
+    + http://www.joinc.co.kr/modules/moniwiki/wiki.php/man/12/zookeeper
+    + http://ccambo.blogspot.kr/2014/12/solrcloud-zookeeper-cluster.html
+    + http://develop.sunshiny.co.kr/886
+    + http://blog.seulgi.kim/2014/05/zookeeper-1-znode-zookeeper-data.html
+    
+    + http://code.openark.org/blog/linux/zookeepercli-lightweight-powerful-controlled-command-line-client-for-zookeeper
+    + http://bcho.tistory.com/1016
+    
+    + https://zookeeper.apache.org/doc/r3.4.7/recipes.html
+    + http://zookeeper.apache.org/doc/r3.3.4/zookeeperAdmin.html
+    + https://www.elastic.co/blog/found-zookeeper-king-of-coordination
+    
+    ## 잘 정리되어 있군!!
+    + https://blog.serverdensity.com/how-to-monitor-zookeeper/
+*/
+
+
+-------------------------------
+0. 필수 설치
+-------------------------------
+yum -y install git nc 
+
+
+-------------------------------
+0. OS 환경 설정 
+-------------------------------
+sudo su -
+
+cat /etc/security/limits.d/90-nproc.conf
+
+echo ""
+echo "*          -       nofile    65536"     >> /etc/security/limits.d/90-nproc.conf
+echo "*          -       nproc     unlimited" >> /etc/security/limits.d/90-nproc.conf
+
+cat /etc/security/limits.d/90-nproc.conf
+
+cat /etc/ld.so.conf
+
+echo /usr1/zookeeper/3.4.7/lib                 >> /etc/ld.so.conf && ldconfig
+echo /usr/lib64                           >> /etc/ld.so.conf && ldconfig
+echo PATH=$PATH:/usr1/zookeeper/3.4.7/bin      >> /etc/profile && source /etc/profile 
+
+cat /etc/ld.so.conf
+
+. /etc/profile
+
+
+
+## 계정 생성
+-- judy1234 (비번)
+groupadd zookeeper
+useradd zookeeper -g zookeeper -d /home/zookeeper
+passwd zookeeper
+
+tail -1 /etc/group
+tail -1 /etc/passwd
+
+
+## JVM 메모리 지정 
+vi /etc/profile.d/java.sh
+----------------------------------
+export JAVA_OPTS="-Xms300m -Xmx300m"
+
+chmod +x /etc/profile.d/java.sh
+
+-------------------------------
+1. 디렉토리 생성
+-------------------------------
+mkdir -p /usr1/zookeeper/data
+mkdir -p /usr1/zookeeper/log
+mkdir -p /usr1/zookeeper/3.4.7
+mkdir -p /usr1/program
+
+-------------------------------
+2. 설치
+(10.4.1.30      10.4.1.27          10.4.1.28)
+## https://gist.github.com/rosstimson/81e1f20fbb0d425ac09a
+## https://github.com/globocom/zookeeper-centos-6
+-------------------------------
+cd /usr1/program
+wget http://apache.tt.co.kr/zookeeper/zookeeper-3.4.7/zookeeper-3.4.7.tar.gz
+tar -zxvf zookeeper-3.4.7.tar.gz
+
+mv zookeeper-3.4.7  /usr1/zookeeper/3.4.7
+
+vi /usr1/zookeeper/3.4.7/conf/zoo.cfg
+-------------------------------------
+# The number of milliseconds of each tick
+tickTime=2000
+# The number of ticks that the initial
+# synchronization phase can take
+initLimit=10
+# The number of ticks that can pass between
+# sending a request and getting an acknowledgement
+syncLimit=5
+# the directory where the snapshot is stored.
+# do not use /tmp for storage, /tmp here is just
+# example sakes.
+dataDir=/usr1/zookeeper/data
+dataLogDir=/usr1/zookeeper/log
+
+# the port at which the clients will connect
+clientPort=2181
+# the maximum number of client connections.
+# increase this if you need to handle more clients
+#maxClientCnxns=60
+#
+# Be sure to read the maintenance section of the
+# administrator guide before turning on autopurge.
+#
+# http://zookeeper.apache.org/doc/current/zookeeperAdmin.html#sc_maintenance
+#
+# The number of snapshots to retain in dataDir
+#autopurge.snapRetainCount=3
+# Purge task interval in hours
+# Set to "0" to disable auto purge feature
+#autopurge.purgeInterval=1
+
+maxSessionTimeout=180000
+server.1=test1.judydba.com:2888:3888
+server.2=test2.judydba.com:2888:3888
+server.3=test3.judydba.com:2888:3888
+
+
+>> LOG 및 로그 경록 설정 
+>> 10M 단위로 10개 INDEX 유지
+vi /usr1/zookeeper/3.4.7/conf/java.env
+-------------------------------------
+ZOO_LOG4J_PROP="INFO,ROLLINGFILE"
+
+
+vi /etc/profile.d/java.sh
+-------------------------------------
+export JAVA_OPTS="-Xms400m -Xmx400m"
+
+>> 시작쉘 설정 
+vi /etc/init.d/zookeeper
+-------------------------------------
+#!/bin/bash
+
+# /etc/init.d/zookeeper
+
+# Licensed to the Apache Software Foundation (ASF) under one or more
+# contributor license agreements.  See the NOTICE file distributed with
+# this work for additional information regarding copyright ownership.
+# The ASF licenses this file to You under the Apache License, Version 2.0
+# (the "License"); you may not use this file except in compliance with
+# the License.  You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# 
+# ZooKeeper
+# 
+# chkconfig: 2345 89 9 
+# description: zookeeper
+
+# ZooKeeper install path (where you extracted the tarball)
+ZOOKEEPER='/usr1/zookeeper/3.4.7'
+
+source /etc/rc.d/init.d/functions
+
+RETVAL=0
+desc="ZooKeeper daemon"
+export ZOO_LOG_DIR=/usr1/zookeeper/log
+
+start() {
+  echo -n $"Starting $desc (zookeeper): "
+  daemon --user zookeeper $ZOOKEEPER/bin/zkServer.sh start
+  RETVAL=$?
+  echo
+  [ $RETVAL -eq 0 ] && touch /var/lock/subsys/zookeeper
+  return $RETVAL
+}
+
+stop() {
+  echo -n $"Stopping $desc (zookeeper): "
+  daemon --user zookeeper $ZOOKEEPER/bin/zkServer.sh stop
+  RETVAL=$?
+  sleep 5
+  echo
+  [ $RETVAL -eq 0 ] && rm -f /var/lock/subsys/zookeeper $PIDFILE
+}
+
+restart() {
+  stop
+  start
+}
+
+get_pid() {
+  cat "$PIDFILE"
+}
+
+checkstatus(){
+  status -p $PIDFILE ${JAVA_HOME}/bin/java
+  RETVAL=$?
+}
+
+condrestart(){
+  [ -e /var/lock/subsys/zookeeper ] && restart || :
+}
+
+case "$1" in
+  start)
+    start
+    ;;
+  stop)
+    stop
+    ;;
+  status)
+    checkstatus
+    ;;
+  restart)
+    restart
+    ;;
+  condrestart)
+    condrestart
+    ;;
+  *)
+    echo $"Usage: $0 {start|stop|status|restart|condrestart}"
+    exit 1
+esac
+
+exit $RETVAL
+
+chmod 755 /etc/init.d/zookeeper
+chkconfig --add zookeeper
+chkconfig zookeeper on
+
+
+-------------------------------
+3. NameNode에서 각 노드별 아이디 값 저장
+-------------------------------
+test1 서버 실행 >> 
+echo "1" > /usr1/zookeeper/data/myid
+
+test2 서버 실행 >> 
+echo "2" > /usr1/zookeeper/data/myid
+
+test3 서버 실행 >> 
+echo "3" > /usr1/zookeeper/data/myid
+
+chown -R zookeeper:zookeeper /usr1/zookeeper
+
+-------------------------------
+4. 주키퍼 서버 실행 
+-------------------------------
+service zookeeper start
+
+
+#/usr1/program/zookeeper-3.4.7/bin/zkEnv.sh start
+
+-------------------------------
+5. 주키퍼 클라이언트 실행 
+http://zookeeper.apache.org/doc/r3.4.6/zookeeperStarted.html
+
+ephemeral and sequential node use the flags -e and -s.
+-------------------------------
+
+## 터미널 접속 
+/usr1/zookeeper/3.4.7/bin/zkCli.sh
+
+
+## 노드 생성 
+[zk: localhost:2181(CONNECTED) 0] create /zk_test
+Created /zk_test
+
+[zk: localhost:2181(CONNECTED) 0] ls /
+[zookeeper, zk_test]
+
+[zk: localhost:2181(CONNECTED) 2] get /zk_test
+test_data
+cZxid = 0x100000004
+ctime = Wed Dec 30 19:35:17 PST 2015
+mZxid = 0x100000004
+mtime = Wed Dec 30 19:35:17 PST 2015
+pZxid = 0x100000004
+cversion = 0
+dataVersion = 0
+aclVersion = 0
+ephemeralOwner = 0x0
+dataLength = 9
+numChildren = 0
+
+## 1) watch triggering
+stat /zk_test watch
+
+## 다른 세션에서 설정 
+set /zk_test ByeCruelWorld!11
+
+A 서버세션에서 이벤트 트리거링 됨
+[zk: localhost:2181(CONNECTED) 20]
+WATCHER::
+
+WatchedEvent state:SyncConnected type:NodeDataChanged path:/zk_test
+
+create -e /judy/a1 jangsunwoo
+
+create -e /judy a
+create /judy2/judy3 a
+
+## 2) 임시 node 생성
+[zk: localhost:2181(CONNECTED) 0] create -e /zk_temp test
+Created /zk_temp
+
+[zk: localhost:2181(CONNECTED) 5] get /zk_temp
+test
+cZxid = 0x30000001a
+ctime = Sun Jan 03 22:51:17 PST 2016
+mZxid = 0x30000001a
+mtime = Sun Jan 03 22:51:17 PST 2016
+pZxid = 0x30000001a
+cversion = 0
+dataVersion = 0
+aclVersion = 0
+ephemeralOwner = 0x1520a6a2d3c0005
+dataLength = 4
+numChildren = 0
+
+다른 세션에서 노드를 조회하게 되면 노드가 삭제된 상태이다.(바로 삭제되는 형식이 아닌듯) 
+[zk: localhost:2181(CONNECTED) 10] get /zk_temp
+Node does not exist: /zk_temp
+
+create -s /zk_sequence/abcd 1
+
+## 상태 파악
+[root@test3 zookeeper-3.4.7]#  /usr1/zookeeper/3.4.7/bin/zkServer.sh status
+ZooKeeper JMX enabled by default
+Using config: /usr1/zookeeper/3.4.7/bin/../conf/zoo.cfg
+Mode: follower
+
+echo stat | nc localhost 2181 | grep Mode
+
+## 서버 접속
+[root@test1 zookeeper-3.4.7]# /usr1/zookeeper/3.4.7/bin/zkCli.sh -server test1.judydba.com,test2.judydba.com,test3.judydba.com
+Connecting to test1.judydba.com,test2.judydba.com,test3.judydba.com
+[zk: test1.judydba.com,test2.judydba.com,test3.judydba.com(CONNECTED) 0] ㅣls
+[zk: test1.judydba.com,test2.judydba.com,test3.judydba.com(CONNECTED) 1] ls /
+[zookeeper]
+[zk: test1.judydba.com,test2.judydba.com,test3.judydba.com(CONNECTED) 2] create /e a
+Created /e
+[zk: test1.judydba.com,test2.judydba.com,test3.judydba.com(CONNECTED) 3] ls /
+[e, zookeeper]
+[zk: test1.judydba.com,test2.judydba.com,test3.judydba.com(CONNECTED) 4] get /e
+a
+cZxid = 0x100000002
+ctime = Wed Dec 30 21:29:44 PST 2015
+mZxid = 0x100000002
+mtime = Wed Dec 30 21:29:44 PST 2015
+pZxid = 0x100000002
+cversion = 0
+dataVersion = 0
+aclVersion = 0
+ephemeralOwner = 0x0
+dataLength = 1
+numChildren = 0
+[zk: test1.judydba.com,test2.judydba.com,test3.judydba.com(CONNECTED) 5]
+[zk: test1.judydba.com,test2.judydba.com,test3.judydba.com(CONNECTED) 5] quit
+Quitting...
+2015-12-30 21:30:34,176 [myid:] - INFO  [main-EventThread:ClientCnxn$EventThread@519] - EventThread shut down for session: 0x151f62ba9760000
+2015-12-30 21:30:34,177 [myid:] - INFO  [main:ZooKeeper@684] - Session: 0x151f62ba9760000 closed
+
+## 로그 파일 생성
+[root@test1 zookeeper-3.4.7]# ls -al /usr1/zookeeper/log/version-2/
+total 16
+drwxr-xr-x 2 root root     4096 Dec 31 14:28 .
+drwxr-xr-x 3 root root     4096 Dec 31 12:53 ..
+-rw-r--r-- 1 root root 67108880 Dec 31 14:30 log.100000001
+
+## 동작 확인
+## ZNode는 node와 node의 data에 관한 여러 정보를 들고 있고, 이것을 stat이라고 부른다. stat이 가지는 정보는 다음과 같다.
+czxid : znode를 생성한 트랜잭션의 id
+mzxid : znode를 마지막으로 수정 트랜잭션의 id
+ctime : znode가 생성됐을 때의 시스템 시간
+mtime : znode가 마지막으로 변경되었을 때의 시스템 시간
+version : znode가 변경된 횟수
+cversion : znode의 자식 node를 수정한 횟수
+aversion : ACL 정책을 수정한 횟수
+ephemeralOwner : 임시 노드인지에 대한 flag
+dataLength : data의 길이
+numChildren : 자식 node의 수
+---------------------------------------------------------------------------------------------------------------------
+[zk: localhost:2181(CONNECTED) 3] get /e
+a
+cZxid = 0x100000002
+ctime = Wed Dec 30 21:29:44 PST 2015
+mZxid = 0x100000002
+mtime = Wed Dec 30 21:29:44 PST 2015
+pZxid = 0x100000002
+cversion = 0
+dataVersion = 0
+aclVersion = 0
+ephemeralOwner = 0x0
+dataLength = 1
+numChildren = 0
+
+
+## 운영시 JVM 힙사이즈 조정
+---------------------------------------------------------------------------------------------------------------------
+## ZooKeeper 을 Swap이 발생할 수 있는 상황으로 관리하면 안 된다. 
+## ZooKeeper가 기능을 제대로 발휘할 수 있도록 하기 위해서는 Swap 발생을 미리 차단해 놓아야 한다. 예를 들어 ZooKeeper가 사용할 수 있는 Heap Size를 물리적인 사용 가능 메모리보다 크게 지정하면 나중에 메모리 Swap이 발생하므로 이런 설정은 피해야 한다. 이와 같은 피해야 할 부분들은 여기를 참고하면 된다.
+
+
+## ACL
+[zk: localhost:2181(CONNECTED) 4] getAcl /e
+'world,'anyone
+: cdrwa
+
+
+## Monitoring
+------------------------------------------------------------------------------------------------------------------------
+http://zookeeper.apache.org/doc/r3.3.4/zookeeperAdmin.html#sc_zkCommands
+
+yum  -y install nc
+
+
+[root@test3 ~]# echo conf | nc 127.0.0.1 2181
+clientPort=2181
+dataDir=/usr1/zookeeper/data/version-2
+dataLogDir=/usr1/zookeeper/log/version-2
+tickTime=2000
+maxClientCnxns=60
+minSessionTimeout=4000
+maxSessionTimeout=180000
+serverId=3
+initLimit=10
+syncLimit=5
+electionAlg=3
+electionPort=3888
+quorumPort=2888
+peerType=0
+
+[root@test1 ~]# echo srvr | nc 127.0.0.1 2181    
+Zookeeper version: 3.4.7-1713338, built on 11/09/2015 04:32 GMT
+Latency min/avg/max: 0/45/135
+Received: 7
+Sent: 6
+Connections: 1
+Outstanding: 0
+Zxid: 0x600000002
+Mode: follower
+Node count: 20
+
+
+
+#) 특이사항2
+zookeeper 는 반드시 모든 1/2 + 1 대가 살아 있어야한다. 
+또한 홀수갯수로 한다
+
+#) 로그 
+데이타 스냅샷 /usr1/zookeeper/log/version-2/
+트랜잭션 로그 /usr1/zookeeper/log/version-2/
+
+
+## ZOOKEEPER 실행 쉘 경로
+[root@test3 ~]# tree /usr1/zookeeper/3.4.7/bin
+/usr1/zookeeper/3.4.7/bin
+├── README.txt
+├── zkCleanup.sh
+├── zkCli.cmd
+├── zkCli.sh
+├── zkEnv.cmd
+├── zkEnv.sh
+├── zkServer.cmd
+└── zkServer.sh
+
+## config 경로
+[root@test3 ~]# tree /usr1/zookeeper/3.4.7/conf
+/usr1/zookeeper/3.4.7/conf
+├── configuration.xsl
+├── java.env            
+├── log4j.properties       ## 로그 포맷 및 유지 관리 설정 
+├── zoo.cfg                ## 주키퍼 config
+└── zoo_sample.cfg
+
+
+## 데이타 데이타  
+[root@test3 ~]# tree /usr1/zookeeper/data
+/usr1/zookeeper/data
+├── myid        ## 서버 ID 
+├── version-2   ## 스냅샷 데이타 
+│   ├── acceptedEpoch
+│   ├── currentEpoch
+│   ├── snapshot.300000000     ## suffix name : last committed transaction id (zxid )
+│   ├── snapshot.600000004
+│   ├── snapshot.600000068
+│   └── snapshot.60000006d      
+└── zookeeper_server.pid
+
+## 로그 경로 
+[root@test3 ~]# tree /usr1/zookeeper/log
+/usr1/zookeeper/log
+├── version-2                   ## 트랜잭션 로그
+│   ├── log.100000001
+│   ├── log.200000001
+│   ├── log.300000001
+│   ├── log.600000005
+│   ├── log.600000069
+│   └── log.60000006e           ## suffix name : first transaction id (zxid )
+├── zookeeper.log               ## zookeeper app log 
+└── zookeeper.out               ## zookeeper console log 
+
+
+
+
+#) Maintenance
+
+cd /usr1/zookeeper/3.4.7/
+
+1) 스냅샷 데이타 읽기
+[root@localhost 3.4.7]# java -cp zookeeper-3.4.7.jar:lib/log4j-1.2.16.jar:lib/slf4j-log4j12-1.6.1.jar:lib/slf4j-api-1.6.1.jar org.apache.zookeeper.server.SnapshotFormatter /usr1/zookeeper/data/version-2/snapshot.300000000
+ZNode Details (count=5):
+----
+/
+  cZxid = 0x00000000000000       ## 트랜잭션 ID
+  ctime = Thu Jan 01 09:00:00 KST 1970
+  mZxid = 0x00000000000000
+  mtime = Thu Jan 01 09:00:00 KST 1970
+  pZxid = 0x00000100000002
+  cversion = 1
+  dataVersion = 0
+  aclVersion = 0
+  ephemeralOwner = 0x00000000000000
+  dataLength = 0
+----
+/zookeeper
+  cZxid = 0x00000000000000
+  ctime = Thu Jan 01 09:00:00 KST 1970
+  mZxid = 0x00000000000000
+  mtime = Thu Jan 01 09:00:00 KST 1970
+  pZxid = 0x00000000000000
+  cversion = 0
+  dataVersion = 0
+  aclVersion = 0
+  ephemeralOwner = 0x00000000000000
+  dataLength = 0
+----
+/zookeeper/quota
+  cZxid = 0x00000000000000
+  ctime = Thu Jan 01 09:00:00 KST 1970
+  mZxid = 0x00000000000000
+  mtime = Thu Jan 01 09:00:00 KST 1970
+  pZxid = 0x00000000000000
+  cversion = 0
+  dataVersion = 0
+  aclVersion = 0
+  ephemeralOwner = 0x00000000000000
+  dataLength = 0
+----
+/e
+  cZxid = 0x00000100000002
+  ctime = Thu Dec 31 14:29:44 KST 2015
+  mZxid = 0x00000100000002
+  mtime = Thu Dec 31 14:29:44 KST 2015
+  pZxid = 0x00000100000002
+  cversion = 0
+  dataVersion = 0
+  aclVersion = 0
+  ephemeralOwner = 0x00000000000000
+  dataLength = 1
+----
+Session Details (sid, timeout, ephemeralCount):
+
+2) 트랜잭션 로그 데이타 읽기 
+java -cp zookeeper-3.4.7.jar:lib/log4j-1.2.16.jar:lib/slf4j-log4j12-1.6.1.jar:lib/slf4j-api-1.6.1.jar org.apache.zookeeper.server.LogFormatter  /usr1/zookeeper/log/version-2/log.600000005
+
+[root@localhost 3.4.7]# java -cp zookeeper-3.4.7.jar:lib/log4j-1.2.16.jar:lib/slf4j-log4j12-1.6.1.jar:lib/slf4j-api-1.6.1.jar org.apache.zookeeper.server.LogFormatter  /usr1/zookeeper/log/version-2/log.600000005
+ZooKeeper Transactional Log File with dbid 0 txnlog format version 2
+1/7/16 12:14:38 PM KST session 0x3521a140ab40000 cxid 0x0 zxid 0x600000005 createSession 30000
+
+1/7/16 12:14:51 PM KST session 0x3521a140ab40000 cxid 0x2 zxid 0x600000006 closeSession null
+1/7/16 12:15:47 PM KST session 0x3521a140ab40001 cxid 0x0 zxid 0x600000007 createSession 30000
+
+1/7/16 12:19:42 PM KST session 0x3521a140ab40001 cxid 0x2 zxid 0x600000008 error -101
+
+1/7/16 12:19:58 PM KST session 0x3521a140ab40002 cxid 0x0 zxid 0x600000009 createSession 30000
+
+1/7/16 12:20:14 PM KST session 0x3521a140ab40001 cxid 0x0 zxid 0x60000000a closeSession null
+1/7/16 12:21:57 PM KST session 0x3521a140ab40002 cxid 0x1 zxid 0x60000000b error -8
+
+1/7/16 12:22:06 PM KST session 0x3521a140ab40002 cxid 0x3 zxid 0x60000000c error -101
+
+1/7/16 12:22:19 PM KST session 0x3521a140ab40002 cxid 0x4 zxid 0x60000000d delete '/zk_seq0000000020
+
+1/7/16 12:22:25 PM KST session 0x3521a140ab40002 cxid 0x5 zxid 0x60000000e error -101
+
+1/7/16 12:22:27 PM KST session 0x3521a140ab40002 cxid 0x6 zxid 0x60000000f error -101
+
+1/7/16 12:22:30 PM KST session 0x3521a140ab40002 cxid 0x7 zxid 0x600000010 error -101
+
+3) log clean up
+[root@test1 3.4.7]# ls -al /usr1/zookeeper/data/version-2/
+total 44
+drwxr-xr-x 2 zookeeper zookeeper 4096 Jan 11 14:45 .
+drwxr-xr-x 3 zookeeper zookeeper 4096 Jan 11 14:45 ..
+-rw-r--r-- 1 zookeeper zookeeper    2 Jan 11 14:45 acceptedEpoch
+-rw-r--r-- 1 zookeeper zookeeper    2 Jan 11 14:45 currentEpoch
+-rw-r--r-- 1 zookeeper zookeeper  296 Dec 31 12:53 snapshot.100000000
+-rw-r--r-- 1 zookeeper zookeeper  410 Jan  4 10:30 snapshot.100000005
+-rw-r--r-- 1 zookeeper zookeeper  410 Jan  4 11:14 snapshot.200000004
+-rw-r--r-- 1 zookeeper zookeeper 1880 Jan  7 10:39 snapshot.300000030
+-rw-r--r-- 1 zookeeper zookeeper  988 Jan  7 16:59 snapshot.600000068
+-rw-r--r-- 1 zookeeper zookeeper 1183 Jan  8 09:59 snapshot.600000071
+-rw-r--r-- 1 zookeeper zookeeper 2263 Jan 11 14:45 snapshot.70000003f
+[root@test1 3.4.7]# ls -al /usr1/zookeeper/log/version-2/
+total 64
+drwxr-xr-x 2 zookeeper zookeeper     4096 Jan 11 15:01 .
+drwxr-xr-x 4 zookeeper zookeeper     4096 Jan  8 15:43 ..
+-rw-r--r-- 1 zookeeper zookeeper 67108880 Dec 31 15:46 log.100000001
+-rw-r--r-- 1 zookeeper zookeeper 67108880 Jan  4 17:07 log.200000001
+-rw-r--r-- 1 zookeeper zookeeper 67108880 Jan  7 16:18 log.600000001
+-rw-r--r-- 1 zookeeper zookeeper 67108880 Jan  7 17:12 log.600000069
+-rw-r--r-- 1 zookeeper zookeeper 67108880 Jan  8 16:58 log.700000001
+-rw-r--r-- 1 zookeeper zookeeper 67108880 Jan 11 15:01 log.a00000001
+
+
+## This can be run as a cron job on the ZooKeeper server machines to clean up the logs daily.
+##
+
+## not working ... 헐...
+cd /usr1/zookeeper/3.4.7/
+java -cp zookeeper-3.4.7.jar:lib/slf4j-api-1.6.1.jar:lib/slf4j-log4j12-1.6.1.jar:lib/log4j-1.2.16.jar:conf org.apache.zookeeper.server.PurgeTxnLog /usr1/zookeeper/data /usr1/zookeeper/log  -n 5
+
+
+## cronjob daily job
+## http://stackoverflow.com/questions/31689252/how-to-purge-zookeeper-logs-with-purgetxnlog
+## -----------------------------------------------------------------------
+vi /usr1/zookeeper/dba/cron/purgetxnlog.sh
+----------------
+COUNT=10
+DATADIR=/usr1/zookeeper/log/version-2/
+
+ls -1drt ${DATADIR}/* | head --lines=-${COUNT} | xargs sudo rm -f
