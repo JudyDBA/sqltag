@@ -1,0 +1,43 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+VAGRANTFILE_API_VERSION = "2"
+
+Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
+
+  ["1", "2", "3"].each do |n|
+    config.vm.define "kf-broker-#{n}" do |zk_config|
+      zk_config.vm.box = "boxcutter/centos66"
+      zk_config.vm.provider "virtualbox" do |v|
+        v.memory = 1024
+        v.cpus = 1
+      end  
+      zk_config.vm.hostname = "kf-broker-#{n}"
+      zk_config.vm.network "private_network", :ip => "192.168.13.1#{n}"
+      zk_config.vm.provision :shell, :path => "vm-init.sh", :args => n
+      zk_config.vm.provision :shell, :path => "vm-zookeeper.sh", :args => n
+      zk_config.vm.provision :shell, :path => "vm-kafka.sh", :args => n
+      zk_config.vm.provision :shell, :inline => "start zookeeper", :run => "always"
+      zk_config.vm.provision :shell, :inline => "start kafka", :run => "always"
+    end
+  end
+
+  config.vm.define "kf-procedure" do |zk_config|
+    zk_config.vm.box = "boxcutter/centos66"
+    zk_config.vm.hostname = "kf-procedure"
+    zk_config.vm.network "private_network", :ip => "192.168.13.14"
+    zk_config.vm.provision :shell, :path => "vm-init.sh", :args => 4
+    zk_config.vm.provision :shell, :path => "vm-zookeeper.sh", :args => 4
+    zk_config.vm.provision :shell, :path => "vm-kafka.sh", :args => 4
+  end
+
+  config.vm.define "kf-consumer" do |zk_config|
+    zk_config.vm.box = "boxcutter/centos66"
+    zk_config.vm.hostname = "kf-consumer"
+    zk_config.vm.network "private_network", :ip => "192.168.13.15"
+    zk_config.vm.provision :shell, :path => "vm-init.sh", :args => 5
+    zk_config.vm.provision :shell, :path => "vm-zookeeper.sh", :args => 5
+    zk_config.vm.provision :shell, :path => "vm-kafka.sh", :args => 5
+  end
+  
+end
