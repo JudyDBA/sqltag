@@ -37,7 +37,7 @@ git push origin master
 ### Reference link
 * [GitHub Windows 커밋하고 원격저장소에 반영하기] ( http://demun.tistory.com/2427)
 * [완전 초보를 위한 깃허브] (https://nolboo.github.io/blog/2013/10/06/github-for-beginner/)
-* [Github 마크다운 Mastering Markdown] http://demun.tistory.com/2496
+* [Github 마크다운 Mastering Markdown] (http://demun.tistory.com/2496)
 * https://help.github.com/articles/creating-and-highlighting-code-blocks/
 
 
