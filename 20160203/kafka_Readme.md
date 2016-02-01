@@ -1,6 +1,7 @@
 #  Kafka 설치 및 연동 테스트 
 
 > zookeeper+kafka  cluster vagrant up install
+> zookeeper znode data 확인
 
 
 ### kafka cluster node 3 tea
@@ -12,7 +13,7 @@ kf-broker-3   |  192.168.13.13   |     kafka + zookeeper
 kf-procedure   |  192.168.13.14  |   kafka + zookeeper
 kf-consumer   |  192.168.13.15   |   kafka + zookeeper
 
-
+```bash
 구동 또는 생성 : vagrant up --provider virtualbox
 구동 : vagrant up
 종료 : vagrant halt
@@ -25,6 +26,7 @@ start kafka
 각 서비스들이 살아 있는지 확인 하는 명령어 
 ps -ef | grep kafka
 ps -ef | grep zookeeper
+```
 
 ###  kafka 연동 테스트 
 ```bash
