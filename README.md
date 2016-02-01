@@ -3,14 +3,14 @@
 
 http://cafe.naver.com/sqlmvp/4949
 
-## 기간
+#### 기간
 2016.01.20 ~ 
 
-## 환경
+#### 환경
 * Wiin7
 * CentOS 6.5
 
-## 준비물
+#### 준비물
 * Putty http://putty.ko.softonic.com/
 * mRemoteNG http://www.mremoteng.org/download
 * Vagrant https://www.vagrantup.com/downloads.html
