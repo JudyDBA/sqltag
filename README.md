@@ -1,5 +1,5 @@
 # sqltag
-"실시간 분석의 모든것" 책  공부 
+"실시간 분석의 모든것" 책  스터디 
 
 http://cafe.naver.com/sqlmvp/4949
 
