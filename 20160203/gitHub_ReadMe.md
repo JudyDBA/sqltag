@@ -1,11 +1,7 @@
 # GitHub 사용하기 
 
-### Reference link
-* http://demun.tistory.com/2427
-* https://nolboo.github.io/blog/2013/10/06/github-for-beginner/
-* https://teragoon.wordpress.com/2012/04/04/github%EC%97%90%EC%84%9C-readmemd-%EC%9E%91%EC%84%B1%ED%95%98%EA%B8%B0markdown-%EB%AC%B8%EB%B2%95/
 
-
+`
 // 로컬 디렉토리 만들고
 cd d:\
 mkdir git\testgit
@@ -33,5 +29,9 @@ git status          // 현재 상태를 훑어보고
 git add 화일명.확장자  // 깃 주목 리스트에 화일을 추가하고 or
 git add .           // 이 명령은 현재 디렉토리의 모든 화일을 추가할 수 있다.
 git commit -m “대문 수정”
+`
 
-
+### Reference link
+* http://demun.tistory.com/2427
+* https://nolboo.github.io/blog/2013/10/06/github-for-beginner/
+* https://teragoon.wordpress.com/2012/04/04/github%EC%97%90%EC%84%9C-readmemd-%EC%9E%91%EC%84%B1%ED%95%98%EA%B8%B0markdown-%EB%AC%B8%EB%B2%95/
