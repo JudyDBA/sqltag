@@ -1,4 +1,6 @@
 ## Zookeeper 테스트 환경 설치
+
+```bash
 ## http://www.slideshare.net/kthcorp/h3-2012-vagrant
 ## http://mobicon.tistory.com/322
 ## https://mmcgrana.github.io/2014/05/getting-started-with-zookeeper-and-go.html
@@ -39,3 +41,5 @@ step 3 ) vm 구동
 
 ## 클러스터 확인 
 echo 'mntr' | nc localhost 2181
+
+```
