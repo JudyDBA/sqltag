@@ -1,3 +1,6 @@
+
+
+```bash
 /*
     vagrant 사이트 접속
     https://atlas.hashicorp.com/boxcutter/boxes/centos66
@@ -93,8 +96,7 @@ http://blog.daum.net/lkflower/17224511
 mvn verify
 
 
-
-
+```
 
 
 
