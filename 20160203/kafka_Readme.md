@@ -1,7 +1,7 @@
 #  Kafka 설치 및 연동 테스트 
 
-> zookeeper+kafka  cluster vagrant up install
-> zookeeper znode data 확인
+* zookeeper+kafka  cluster vagrant install
+* zookeeper znode data 확인
 
 
 ### kafka cluster node 3 tea
