@@ -2,6 +2,8 @@
 
 Github desktop 다운로드 후 설치(윈도우 사용자) : https://desktop.github.com/
 
+* Github tool을 이용한 소스 관리 
+* command 명령어
 ```bash
 // 로컬 디렉토리 만들고
 cd d:\
