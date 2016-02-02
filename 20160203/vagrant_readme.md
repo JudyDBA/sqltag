@@ -6,7 +6,7 @@ https://atlas.hashicorp.com/boxes/search
 2. hostname  변경 
 
 ### Reference link
-* (vagrant 사용하기) [http://zuriyang.tistory.com/102] ==> 기본 명령어 정리
+* [vagrant 사용하기] (http://zuriyang.tistory.com/102) :low_brightness:
 * https://www.vagrantup.com/docs/providers/  ==>   VirtualBox, Hyper-V, and Docker
 * http://wiki.opencloudengine.org/pages/viewpage.action?pageId=2852295
 * https://slipp.net/wiki/pages/viewpage.action?pageId=12189742
