@@ -114,3 +114,9 @@ echo stat | nc 127.0.0.1 2181
 
 
 ```
+
+### Reference link
+* http://kafka.apache.org/downloads.html
+* http://kafka.apache.org/documentation.html
+* https://github.com/KHELYS/kafka
+* http://www.yongbok.net/blog/apache-kafka-a-high-throughput-distributed-messaging-system/
