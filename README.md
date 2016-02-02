@@ -17,3 +17,6 @@ http://cafe.naver.com/sqlmvp/4949
 * virtualbox https://www.virtualbox.org/wiki/Downloads
 * WinScp https://winscp.net/eng/docs/lang:ko
 
+#### sqltag memebr repositories
+* 한덕우 https://github.com/ithenine/vagrant 
+* 추교성 https://github.com/mrsunge/studyhadoop
