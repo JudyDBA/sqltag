@@ -1,4 +1,4 @@
-# Vagrant
+# Vagrant (베이그런트)
 https://www.vagrantup.com/  
 https://atlas.hashicorp.com/boxes/search  
 
