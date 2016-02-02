@@ -1,5 +1,8 @@
 # GitHub 사용하기 
 
+github desktop 다운로드 후 설치
+https://desktop.github.com/
+
 ```bash
 // 로컬 디렉토리 만들고
 cd d:\
