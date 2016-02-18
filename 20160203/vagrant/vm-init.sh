@@ -5,15 +5,15 @@
 BROKER_ID=$1
 
 if [ $BROKER_ID -lt 4 ]; then
-    sed -i "s/kf-broker-${BROKER_ID}//" /etc/hosts    
+    sed -i "s/kf-broker-${BROKER_ID}//" /etc/hosts
 fi
 
 if [ $BROKER_ID -eq 4 ]; then
-    sed -i "s/kf-procedure//" /etc/hosts    
+    sed -i "s/kf-procedure//" /etc/hosts
 fi
 
 if [ $BROKER_ID -eq 5 ]; then
-    sed -i "s/kf-consumer//" /etc/hosts    
+    sed -i "s/kf-consumer//" /etc/hosts
 fi
 
 ## host

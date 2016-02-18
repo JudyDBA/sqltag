@@ -24,9 +24,9 @@ cp -r producer.properties old_producer.properties
 
 BROKER_ID=$1
 
-## config change 
-sed -i "/^broker.id=/s/=.*/=${BROKER_ID}/" server.properties  
-sed -i '/^log.dirs=/s/=.*/=\/usr1\/kafka\/log/' server.properties 
+## config change
+sed -i "/^broker.id=/s/=.*/=${BROKER_ID}/" server.properties
+sed -i '/^log.dirs=/s/=.*/=\/usr1\/kafka\/log/' server.properties
 sed -i '/^zookeeper.connect=/s/=.*/=kf-broker-1:2181,kf-broker-2:2181,kf-broker-3:2181/' server.properties
 sed -i '/^zookeeper.connect=/s/=.*/=kf-broker-1:2181,kf-broker-2:2181,kf-broker-3:2181/' consumer.properties
 sed -i '/^metadata.broker.list=/s/=.*/=kf-broker-1:9092,kf-broker-2:9092,kf-broker-3:9092/' producer.properties
