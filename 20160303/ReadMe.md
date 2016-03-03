@@ -2,6 +2,7 @@
 
 * zookeeper+kafka  cluster vagrant install
 * zookeeper znode data 확인
+* sample source build
 
 
 ### kafka cluster node 3 tea
@@ -109,6 +110,31 @@ numChildren = 0
 ## ----------------------------------------------------------
 echo stat | nc 127.0.0.1 2181
 
+```
+
+
+### sample source code build
+* https://gist.github.com/JudyDBA/a0e59cb9c2c4e8536049
+* https://gist.github.com/JudyDBA/cbe42dc434f35c10eb43
+* https://gist.github.com/JudyDBA/91818e81e89fd779f8b3
+
+### tools
+* Kafka Offset Monitoring 
+```bash
+mkdir -p /usr1/program/KafkaOffsetMonitor
+cd /usr1/program/KafkaOffsetMonitor
+wget https://github.com/quantifind/KafkaOffsetMonitor/releases/download/v0.2.1/KafkaOffsetMonitor-assembly-0.2.1.jar
+
+java -cp KafkaOffsetMonitor-assembly-0.2.1.jar \
+     com.quantifind.kafka.offsetapp.OffsetGetterWeb \
+     --zk kf-broker-1:2181 \
+     --port 8080 \
+     --refresh 10.seconds \
+     --retain 2.days
+	 
+	 
+-- 접속
+http://kf-broker-1:8080/
 ```
 
 ### Reference link
